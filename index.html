@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#000000"><title>ROUGH ECHO / SOFT BLOOM</title>
+<style>
+:root{--background-front-top:#000000;--background-front-bottom:#c91b1b;--background-back-top:#b0bfff;--background-back-bottom:#ffffff;--back-opacity:0}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none;font-family:Arial,"PingFang SC",sans-serif;letter-spacing:0;background:#000}body:before,body:after{content:"";position:fixed;inset:0;pointer-events:none}body:before{background:linear-gradient(180deg,var(--background-front-top),var(--background-front-bottom))}body:after{background:linear-gradient(180deg,var(--background-back-top),var(--background-back-bottom));opacity:var(--back-opacity)}#stage{position:fixed;inset:0;touch-action:none;z-index:1;cursor:grab;outline:none;-webkit-tap-highlight-color:transparent}#stage:active{cursor:grabbing}#stage:focus-visible{outline:2px solid #fff;outline-offset:-6px}canvas{display:block;width:100%;height:100%}.tools{position:fixed;z-index:2;bottom:max(16px,env(safe-area-inset-bottom));right:max(16px,env(safe-area-inset-right));display:flex;gap:8px}button{min-height:44px;padding:0 15px;border:1px solid #ffffff50;border-radius:4px;background:#11111155;backdrop-filter:blur(12px);color:white;font-size:12px;cursor:pointer}button:focus-visible{outline:2px solid white}button[hidden]{display:none}#status{position:fixed;z-index:3;bottom:max(72px,calc(env(safe-area-inset-bottom) + 56px));left:24px;right:24px;margin:0;color:white;text-shadow:0 1px 6px #000;font-size:12px;line-height:1.6;text-align:center;pointer-events:none}#fallback{display:none;position:absolute;max-width:80vw;max-height:78dvh;left:50%;top:50%;transform:translate(-50%,-50%)}
+</style></head><body>
+<style>body::before,body::after{z-index:0}#stage{z-index:2}</style>
+<canvas id="particles" aria-hidden="true" style="position:fixed;inset:0;z-index:1;pointer-events:none"></canvas>
+<main id="stage" role="button" tabindex="0" aria-label="翻转卡片"><img id="fallback" src="assets/front.png" alt="ROUGH ECHO 卡片"></main>
+<p id="status" role="status" aria-live="polite"></p>
+<script src="assets/three.min.js"></script><script src="particles.js"></script><script src="app.js"></script>
+</body></html>
