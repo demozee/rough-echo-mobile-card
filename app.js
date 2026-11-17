@@ -27,22 +27,26 @@ function onOrientation(e){
  if(sensorState!=='active'){clearTimeout(sensorTimeout);sensorState='active';renderSensorState();message('');}
  // Project gravity onto the screen: physical level stays neutral in every orientation.
  const rad=Math.PI/180,b=e.beta*rad,g=e.gamma*rad,a=(screen.orientation?.angle??window.orientation??0)*rad;
- const x=Math.cos(b)*Math.sin(g),y=Math.sin(b);
+ const x=Math.sin(g),y=Math.sin(b);
  const response=v=>Math.abs(v)<.008?0:Math.sign(v)*(Math.abs(v)-.008)/.992;
  sensorTilt.y=clamp(response(x*Math.cos(a)+y*Math.sin(a))*1.05,-.55,.55);
  sensorTilt.x=clamp(response(y*Math.cos(a)-x*Math.sin(a))*.9,-.5,.5);
 }
 async function startSensor(fromGesture=false){
  if(!isSecureContext||!window.DeviceOrientationEvent)return;
+ if(typeof DeviceOrientationEvent.requestPermission==='function'&&!fromGesture){sensorState='needs-gesture';renderSensorState();return;}
  const id=++requestId;sensorState='requesting';renderSensorState();
  try{const ask=DeviceOrientationEvent.requestPermission;const permission=typeof ask==='function'?await ask.call(DeviceOrientationEvent):'granted';if(id!==requestId)return;if(permission!=='granted'){stopSensor();return message('未获得体感权限，仍可拖动和点击卡片。');}awaitSensor();window.addEventListener('deviceorientation',onOrientation,{passive:true});}
  catch(e){if(id!==requestId)return;stopSensor();
   // Safari needs a user gesture before showing its native permission prompt.
-  if(!fromGesture&&e.name==='NotAllowedError'){sensorState='needs-gesture';renderSensorState();return;}
+  if(e.name==='NotAllowedError'){sensorState='needs-gesture';renderSensorState();return;}
   message('无法开启体感，仍可拖动和点击卡片。');
  }
 }
-stage.addEventListener('click',()=>{if(sensorState==='needs-gesture')startSensor(true);});
+// Request synchronously within a real gesture, including after a no-data timeout.
+function requestSensorFromGesture(){if(['needs-gesture','off'].includes(sensorState))startSensor(true);}
+stage.addEventListener('click',requestSensorFromGesture);
+stage.addEventListener('touchend',requestSensorFromGesture,{passive:true});
 if(navigator.maxTouchPoints>0||matchMedia('(pointer: coarse)').matches)startSensor();
 window.addEventListener('orientationchange',()=>{if(sensorState==='active')awaitSensor();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){drag=null;tilt={x:0,y:0};clearTimeout(sensorTimeout);}else if(sensorState==='active'||sensorState==='waiting')awaitSensor();});
@@ -69,10 +73,10 @@ function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setPix
 async function init(){try{
  renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.outputEncoding=THREE.sRGBEncoding;stage.appendChild(renderer.domElement);
  scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(34,1,.1,100);tiltRig=new THREE.Group();flipRig=new THREE.Group();scene.add(tiltRig);tiltRig.add(flipRig);
- const loader=new THREE.TextureLoader();const paths=['assets/front-base.png','assets/back-base.png',...['front','back'].flatMap(face=>layerNames.map(name=>`assets/${face}-${name}.png`))];const loaded=await Promise.all(paths.map(src=>new Promise((resolve,reject)=>loader.load(src,resolve,undefined,reject))));loaded.forEach(t=>{t.encoding=THREE.sRGBEncoding;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());renderer.initTexture(t);});textures=loaded.slice(0,2);layerTextures=[loaded.slice(2,7),loaded.slice(7,12)];
+ const loader=new THREE.TextureLoader();const paths=['assets/front-base.webp','assets/back-base.webp',...['front','back'].flatMap(face=>layerNames.map(name=>`assets/${face}-${name}.webp`))];const loaded=await Promise.all(paths.map(src=>new Promise((resolve,reject)=>loader.load(src,resolve,undefined,reject))));loaded.forEach(t=>{t.encoding=THREE.sRGBEncoding;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());renderer.initTexture(t);});textures=loaded.slice(0,2);layerTextures=[loaded.slice(2,7),loaded.slice(7,12)];
  const geo=new THREE.PlaneGeometry(2.1,2.8);front=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({map:textures[0]}));front.position.z=.008;back=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({map:textures[1]}));back.rotation.y=Math.PI;back.position.z=-.008;flipRig.add(front,back);flipRig.add(new THREE.Mesh(new THREE.BoxGeometry(2.1,2.8,.012),new THREE.MeshBasicMaterial({color:0x4c4142})));
  for(const [index,face]of [front,back].entries()){for(const [i,name]of layerNames.entries()){const layer=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:layerTextures[index][i],transparent:true,depthWrite:false}));layer.name=name;layer.renderOrder=name==='title'?6:i+1;face.add(layer);}setFace(face,index);}
- new ResizeObserver(resize).observe(stage);resize();renderer.compile(scene,camera);ready=true;stage.dataset.ready='true';showSide(0);
+ new ResizeObserver(resize).observe(stage);resize();renderer.compile(scene,camera);renderer.render(scene,camera);document.querySelector('#fallback').style.display='none';ready=true;stage.dataset.ready='true';showSide(0);
  function animate(now){
   const dt=Math.min((now-last)/1000,.05),ease=1-Math.exp(-dt*(sensorState==='active'&&!drag?35:18));last=now;const sensor=sensorState==='active'&&!drag&&!turn?sensorTilt:{x:0,y:0};
   let bg=side;
