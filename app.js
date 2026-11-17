@@ -62,8 +62,8 @@ stage.addEventListener('pointermove',e=>{
  if(drag&&drag.id===e.pointerId){
   if(drag.flipped)return;
   const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.moved=Math.max(drag.moved,Math.hypot(dx,dy));const span=Math.min(innerWidth,innerHeight)*.32;
-  tilt.y=clamp(dx/span,-1.1,1.1)*1.05;tilt.x=clamp(-dy/span,-1.1,1.1)*1.05;
-  if(Math.max(Math.abs(tilt.x),Math.abs(tilt.y))>=.96){const axis=Math.abs(dx)>=Math.abs(dy)?'y':'x';drag.flipped=true;flip(axis,Math.sign(axis==='y'?dx:-dy)||1);}
+  tilt.y=clamp(dx/span,-1.1,1.1)*1.05;tilt.x=clamp(dy/span,-1.1,1.1)*1.05;
+  if(Math.max(Math.abs(tilt.x),Math.abs(tilt.y))>=.96){const axis=Math.abs(dx)>=Math.abs(dy)?'y':'x';drag.flipped=true;flip(axis,Math.sign(axis==='y'?dx:dy)||1);}
  }else if(e.pointerType==='mouse'&&!turn&&!reduced){tilt.y=clamp((e.clientX-innerWidth/2)/(innerWidth/2),-1,1)*.24;tilt.x=clamp(-(e.clientY-innerHeight/2)/(innerHeight/2),-1,1)*.18;}
 });
 function release(e,cancel=false){if(!drag||drag.id!==e.pointerId)return;const tap=drag.moved<9&&!drag.flipped;drag=null;tilt={x:0,y:0};if(tap&&!cancel)flip();}
